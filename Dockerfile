@@ -2,6 +2,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 EXPOSE 8080
 ENV DOTNET_ENVIRONMENT=Production
+# Avoid inotify instance limits in containers: use polling for file change watches
+# (fixes "configured user limit (128) on the number of inotify instances has been reached")
+ENV DOTNET_USE_POLLING_FILE_WATCHER=true
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
