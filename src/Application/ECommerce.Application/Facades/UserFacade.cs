@@ -64,7 +64,7 @@ public class UserFacade : IUserFacade
         Username = model.Username,
         PhoneNumber = model.PhoneNumber ?? string.Empty,
         CompanyName = model.CompanyName ?? string.Empty,
-        TwoFactorEnabled = true
+        TwoFactorEnabled = false
       };
       return await _userRepository.AddAsync(user, cancellationToken);
 
@@ -105,6 +105,7 @@ public class UserFacade : IUserFacade
       Id = x.Id,
       Name = x.Name,
       Email = x.Email,
+      Role = x.Role,
       IsLoggedIn = x.IsLoggedIn,
       IsActive = x.IsActive,
       CreatedAt = x.CreatedAt,

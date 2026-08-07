@@ -40,6 +40,11 @@ public class RefreshTokenUseCase : IRefreshTokenUseCase
 
       var user = await _userRepository.GetByIdAsync(storedToken.UserId, cancellationToken) ??  throw NotFoundException.User();
 
+      if (!user.IsActive)
+      {
+        throw BusinessException.AccountDisabled();
+      }
+
       var newAccessToken = _jwtTokenGenerator.GenerateAccessToken(user);
       return newAccessToken;
 

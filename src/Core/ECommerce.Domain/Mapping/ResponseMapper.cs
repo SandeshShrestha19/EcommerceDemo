@@ -27,7 +27,11 @@ public class ResponseMapper
       CreatedAt = user.CreatedAt,
       Role = user.Role,
       IsLoggedIn = user.IsLoggedIn,
-      Name = user.Name
+      IsActive = user.IsActive,
+      Name = user.Name,
+      Username = user.Username,
+      PhoneNumber = user.PhoneNumber,
+      CompanyName = user.CompanyName
     };
   }
 
@@ -36,6 +40,7 @@ public class ResponseMapper
     return new OrderResponseModel
     {
       Id = order.Id,
+      UserId = order.UserId,
       TotalPrice = order.TotalPrice,
       OrderItems = order.OrderItems,
       OrderDate = order.OrderDate,

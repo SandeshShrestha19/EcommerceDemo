@@ -128,10 +128,25 @@ public class ProductFacade : IProductFacade
       product.Description = updateModel.Description ?? product.Description;
       if (updateModel.Price.HasValue)
       {
+        if (updateModel.Price.Value <= 0)
+        {
+          throw new ValidationException("Price must be greater than 0");
+        }
         product.Price = updateModel.Price.Value;
       }
-      product.CategoryId = updateModel.CategoryId;
-      product.Stock = updateModel.Stock;
+      if (updateModel.Stock.HasValue)
+      {
+        if (updateModel.Stock.Value < 0)
+        {
+          throw new ValidationException("Stock cannot be negative");
+        }
+        product.Stock = updateModel.Stock.Value;
+      }
+      if (updateModel.CategoryId.HasValue)
+      {
+        product.CategoryId = updateModel.CategoryId.Value;
+      }
+      product.ModifiedAt = DateTimeOffset.UtcNow;
 
       await _productRepository.UpdateAsync(product, cancellationToken);
     }

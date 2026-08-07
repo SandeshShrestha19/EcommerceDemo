@@ -1,3 +1,4 @@
+using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Ports;
 
 namespace ECommerce.Application.UseCase;
@@ -17,16 +18,16 @@ public class Verify2FAUseCase : IVerify2FAUseCase
 
   public async Task<bool> ExecuteAsync(Guid userId, string code, CancellationToken cancellationToken = default)
   {
-    var user = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw new Exception("User not found!");
+    var user = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw NotFoundException.User();
 
     if (string.IsNullOrEmpty(user.TwoFactorSecret))
     {
-      throw new Exception("2FA not set up!");
+      throw new ValidationException("2FA is not set up!");
     }
     var isValid = _twoFactorService.VerifyCode(user.TwoFactorSecret, code);
     if (!isValid)
     {
-      throw new Exception("Invalid 2FA code!");
+      throw new UnauthorizedException("Invalid 2FA code!");
     }
     user.TwoFactorEnabled = true;
     await _userRepository.UpdateAsync(user, cancellationToken);

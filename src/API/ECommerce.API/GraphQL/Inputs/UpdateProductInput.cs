@@ -1,9 +1,8 @@
-public record UpdateProductInput
-(
+public record UpdateProductInput(
    string? Name,
    string? Description,
-   int Stock,
+   int? Stock,
    decimal? Price,
-   Guid CategoryId,
+   Guid? CategoryId,
    List<ProductImageModel>? ProductImages
 );

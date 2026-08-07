@@ -1,4 +1,6 @@
+using ECommerce.API.GraphQL.Helpers;
 using ECommerce.Domain.Entities;
+using ECommerce.Domain.Models;
 using ECommerce.Domain.Ports;
 using HotChocolate.Authorization;
 
@@ -19,12 +21,12 @@ public class Query
     [UseFiltering]
     [UseSorting]
     [Authorize(Policy = "ActiveUser")]
-    public IQueryable<OrderResponseModel> GetOrders([Service] IOrderFacade orderFacade, PaginationInput paginationInput) =>
-        orderFacade.GetAll(paginationInput.CursorId, paginationInput.PageSize);
+    public IQueryable<OrderResponseModel> GetOrders([Service] IOrderFacade orderFacade, [Service] IHttpContextAccessor httpContextAccessor, PaginationInput paginationInput) =>
+        orderFacade.GetAll(paginationInput.CursorId, paginationInput.PageSize, CurrentUserResolver.From(httpContextAccessor));
 
     [Authorize]
-    public async Task<OrderResponseModel?> GetOrderById([Service] IOrderFacade orderFacade, Guid id, CancellationToken cancellationToken) =>
-        await orderFacade.GetByIdAsync(id, cancellationToken);
+    public async Task<OrderResponseModel?> GetOrderById([Service] IOrderFacade orderFacade, [Service] IHttpContextAccessor httpContextAccessor, Guid id, CancellationToken cancellationToken) =>
+        await orderFacade.GetByIdAsync(id, CurrentUserResolver.From(httpContextAccessor), cancellationToken);
 
     [UseProjection]
     [UseFiltering]
@@ -45,6 +47,6 @@ public class Query
         categoryFacade.GetAll(paginationInput.CursorId, paginationInput.PageSize);
 
     [Authorize(Policy = "ActiveUser")]
-    public async Task<CategoryResponseModel> GetUserById([Service] ICategoryFacade categoryFacade, Guid id, CancellationToken cancellationToken) =>
+    public async Task<CategoryResponseModel> GetCategoryById([Service] ICategoryFacade categoryFacade, Guid id, CancellationToken cancellationToken) =>
         await categoryFacade.GetByIdAsync(id, cancellationToken);
 }

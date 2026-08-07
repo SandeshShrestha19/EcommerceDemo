@@ -69,7 +69,7 @@ public class AppDbContext : DbContext
                 Role = "Admin",
                 IsActive = true,
                 Password = "AQAAAAIAAYagAAAAENWUApdzPmQWudXPT/eH43MRNkXC5P5E3Uq5JF4uSxxuCaf2pXJY5EzEFzUtY+VnYA==",
-                TwoFactorEnabled = true
+                TwoFactorEnabled = false
             }
         ]);
 

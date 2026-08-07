@@ -17,8 +17,10 @@ public class BlacklistedTokenUseCase : IBlacklistedTokenUseCase
     {
       var jtiToken = new BlacklistedToken
       {
+        Id = Guid.CreateVersion7(),
         Jti = addModel.Jti,
-        ExpiresAt = addModel.ExpiresAt
+        ExpiresAt = addModel.ExpiresAt,
+        CreatedAt = DateTime.UtcNow
       };
       await _blacklistedTokenRepository.AddAsync(jtiToken, cancellationToken);
     }

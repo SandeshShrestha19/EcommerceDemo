@@ -4,6 +4,7 @@ using ECommerce.Domain.Entities;
 using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Models;
 using ECommerce.Domain.Ports;
+using Google.Apis.Auth;
 using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 
@@ -38,7 +39,7 @@ public class GoogleAuthUseCase : IGoogleAuthUseCase
   {
     try
     {
-      var payload = await _googleAuthService.VerifyGoogleToken(idToken);
+      var payload = await GetVerifiedPayloadAsync(idToken);
 
       var user = _userRepository.GetAllAsync()
           .FirstOrDefault(u => u.Email == payload.Email);
@@ -105,6 +106,19 @@ public class GoogleAuthUseCase : IGoogleAuthUseCase
     {
       _logger.LogError(ex, "Google auth failed!");
       throw;
+    }
+  }
+
+  private async Task<GoogleJsonWebSignature.Payload> GetVerifiedPayloadAsync(string idToken)
+  {
+    try
+    {
+      return await _googleAuthService.VerifyGoogleToken(idToken);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogInformation(ex, "Google token validation failed!");
+      throw new UnauthorizedException("Invalid Google ID token!");
     }
   }
 }
