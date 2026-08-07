@@ -1,6 +1,4 @@
 using ECommerce.API.GraphQL.Helpers;
-using ECommerce.Domain.Entities;
-using ECommerce.Domain.Models;
 using ECommerce.Domain.Ports;
 using HotChocolate.Authorization;
 
