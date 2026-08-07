@@ -60,9 +60,9 @@ public class LoginUseCase : ILoginUseCase
         };
       }
 
-      var token = _jwtTokenGenerator.GenerateAccessToken(user);
-
       user.IsLoggedIn = true;
+
+      var token = _jwtTokenGenerator.GenerateAccessToken(user);
 
       var refreshToken = new RefreshToken
       {

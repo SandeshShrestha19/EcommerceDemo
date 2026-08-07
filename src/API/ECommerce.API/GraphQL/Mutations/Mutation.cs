@@ -1,6 +1,8 @@
+using ECommerce.API.GraphQL.Helpers;
 using ECommerce.Domain.Models;
 using ECommerce.Domain.Entities;
 using ECommerce.Domain.Ports;
+using ECommerce.Domain.Exceptions;
 using Ecommerce.Domain.Models;
 using HotChocolate.Authorization;
 using System.Security.Claims;
@@ -32,16 +34,16 @@ public class Mutation
         }, cancellationToken);
 
     [Authorize(Roles = ["Admin"])]
-    public async Task<bool> UpdateProduct([Service] IProductFacade productFacade, Guid id, UpdateProductInput udpateProductInput, CancellationToken cancellationToken)
+    public async Task<bool> UpdateProduct([Service] IProductFacade productFacade, Guid id, UpdateProductInput updateProductInput, CancellationToken cancellationToken)
     {
         await productFacade.UpdateAsync(id, new UpdateProductModel
         {
-            Name = udpateProductInput.Name,
-            Description = udpateProductInput.Description,
-            Price = udpateProductInput.Price,
-            Stock = udpateProductInput.Stock,
-            CategoryId = udpateProductInput.CategoryId,
-            ProductImages = udpateProductInput.ProductImages?.Select(pi => new ProductImageModel
+            Name = updateProductInput.Name,
+            Description = updateProductInput.Description,
+            Price = updateProductInput.Price,
+            Stock = updateProductInput.Stock,
+            CategoryId = updateProductInput.CategoryId,
+            ProductImages = updateProductInput.ProductImages?.Select(pi => new ProductImageModel
             {
                 ImageUrl = pi.ImageUrl
             }).ToList()
@@ -84,15 +86,21 @@ public class Mutation
     }
 
 
-    [Authorize]
+    [Authorize(Roles = ["Admin"])]
     public async Task<bool> DeleteUser([Service] IUserFacade userFacade, Guid id, CancellationToken cancellationToken)
     {
         return await userFacade.DeleteAsync(id, cancellationToken);
     }
 
     [Authorize]
-    public async Task<bool> UpdateUser([Service] IUserFacade userFacade, Guid id, UpdateUserInput updateUserInput, CancellationToken cancellationToken)
+    public async Task<bool> UpdateUser([Service] IUserFacade userFacade, [Service] IHttpContextAccessor httpContextAccessor, Guid id, UpdateUserInput updateUserInput, CancellationToken cancellationToken)
     {
+        var currentUser = CurrentUserResolver.From(httpContextAccessor);
+        if (!currentUser.IsAdmin && currentUser.Id != id)
+        {
+            throw new ForbiddenException("You can only update your own account!");
+        }
+
         await userFacade.UpdateAsync(id, new UpdateUserModel
         {
             Name = updateUserInput.Name,
@@ -108,31 +116,33 @@ public class Mutation
     [Authorize(Policy = "ActiveUser")]
     public async Task<Order> PlaceOrder(
     [Service] IOrderFacade orderFacade,
+    [Service] IHttpContextAccessor httpContextAccessor,
     OrderInput orderInput,
     CancellationToken cancellationToken)
     {
+        var currentUser = CurrentUserResolver.From(httpContextAccessor);
+
         return await orderFacade.AddAsync(new PlaceOrderModel
         {
-            UserId = orderInput.UserId,
-            OrderStatus = OrderStatus.Pending,
             Items = orderInput.Items.Select(item => new OrderItemModel
             {
                 ProductId = item.ProductId,
                 Quantity = item.Quantity
             }).ToList()
-        }, cancellationToken);
+        }, currentUser, cancellationToken);
     }
 
     [Authorize(Policy = "ActiveUser")]
-    public async Task<bool> DeleteOrder([Service] IOrderFacade orderFacade, Guid id, CancellationToken cancellationToken)
+    public async Task<bool> DeleteOrder([Service] IOrderFacade orderFacade, [Service] IHttpContextAccessor httpContextAccessor, Guid id, CancellationToken cancellationToken)
     {
-        return await orderFacade.DeleteAsync(id, cancellationToken);
+        return await orderFacade.DeleteAsync(id, CurrentUserResolver.From(httpContextAccessor), cancellationToken);
     }
 
     [Authorize(Policy = "ActiveUser")]
 
     public async Task<bool> UpdateOrder(
     [Service] IOrderFacade orderFacade,
+    [Service] IHttpContextAccessor httpContextAccessor,
     Guid id,
     UpdateOrderInput updateOrderInput,
     CancellationToken cancellationToken)
@@ -145,7 +155,7 @@ public class Mutation
                 ProductId = item.ProductId,
                 Quantity = item.Quantity
             }).ToList()
-        }, cancellationToken);
+        }, CurrentUserResolver.From(httpContextAccessor), cancellationToken);
         return true;
     }
 
@@ -375,6 +385,7 @@ public class Mutation
         return true;
     }
 
+    [Authorize]
     public async Task<Category> AddCategory([Service] ICategoryFacade categoryFacade, CategoryInput categoryInput, CancellationToken cancellationToken)
     {
         return await categoryFacade.AddAsync(new AddCategoryModel

@@ -46,7 +46,8 @@ public class LogoutUseCase : ILogoutUseCase
     }
     catch (Exception ex)
     {
-      _logger.LogInformation(ex, "Failed to log out!");
+      _logger.LogError(ex, "Failed to log out!");
+      throw;
     }
   }
 }

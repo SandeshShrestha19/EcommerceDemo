@@ -25,7 +25,7 @@ public class CategoryFacade : ICategoryFacade
     {
       if (string.IsNullOrWhiteSpace(model.Name))
       {
-        throw new ValidationException("Product name is required");
+        throw new ValidationException("Category name is required");
       }
 
       var category = new Category
@@ -39,8 +39,8 @@ public class CategoryFacade : ICategoryFacade
     }
     catch (Exception ex)
     {
-      _logger.LogError(ex, "Failed to add product");
-      throw new Exception($"Failed to add product: {ex.Message}");
+      _logger.LogError(ex, "Failed to add category");
+      throw;
     }
 
   }
@@ -97,25 +97,28 @@ public class CategoryFacade : ICategoryFacade
   {
     try
     {
-      var category = await _categoryRepository.GetByIdAsync(id, cancellationToken)
-          ?? throw NotFoundException.Category();
-
-      if (!string.IsNullOrWhiteSpace(updateModel.Name))
+      await _unitOfWork.ExecuteInTransactionAsync(async () =>
       {
-        category.Name = updateModel.Name;
-      }
+        var category = await _categoryRepository.GetByIdAsync(id, cancellationToken)
+            ?? throw NotFoundException.Category();
 
-      category.ModifiedAt = DateTimeOffset.UtcNow;
+        if (!string.IsNullOrWhiteSpace(updateModel.Name))
+        {
+          category.Name = updateModel.Name;
+        }
 
-      await _categoryRepository.UpdateAsync(category, cancellationToken);
+        category.ModifiedAt = DateTimeOffset.UtcNow;
 
-      if (updateModel.ProductIds is not null)
-      {
-        await _productRepository.AssignProductsToCategoryAsync(
-            updateModel.ProductIds,
-            category.Id,
-            cancellationToken);
-      }
+        await _categoryRepository.UpdateAsync(category, cancellationToken);
+
+        if (updateModel.ProductIds is not null)
+        {
+          await _productRepository.AssignProductsToCategoryAsync(
+              updateModel.ProductIds,
+              category.Id,
+              cancellationToken);
+        }
+      }, cancellationToken);
     }
     catch (Exception ex)
     {
