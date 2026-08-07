@@ -8,6 +8,7 @@ using HotChocolate.Authorization;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using ECommerce.Domain.UseCase;
+using ECommerce.Domain.Constants;
 
 namespace ECommerce.API.GraphQL.Mutations;
 
