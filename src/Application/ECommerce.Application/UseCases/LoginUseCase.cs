@@ -27,17 +27,17 @@ public class LoginUseCase : ILoginUseCase
     _jwtTokenGenerator = jwtTokenGenerator;
   }
 
-  public async Task<LoginResponseModel> ExecuteAsync(LoginModel model)
+  public async Task<LoginResponseModel> ExecuteAsync(LoginModel model, CancellationToken cancellationToken = default)
   {
     try
     {
-      if (string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+      if (string.IsNullOrWhiteSpace(model.EmailOrUsername) || string.IsNullOrWhiteSpace(model.Password))
       {
         throw new ValidationException("Email or Password field is empty!");
       }
 
-      //verify user by email
-      var user = _userRepository.GetAllAsync().FirstOrDefault(u => u.Email == model.Email) ?? throw new UnauthorizedException();
+      //verify user by email or username
+      var user = _userRepository.GetAllAsync().FirstOrDefault(u => u.Email == model.EmailOrUsername || u.Username == model.EmailOrUsername) ?? throw new UnauthorizedException();
 
       var isValid = PasswordHashHandler.VerifyPassword(model.Password, user.Password);
       if (!isValid)
@@ -55,32 +55,32 @@ public class LoginUseCase : ILoginUseCase
         return new LoginResponseModel
         {
           RequiresTwoFactor = true,
-          Email = model.Email,
+          EmailOrUsername = model.EmailOrUsername,
           TempToken = tempToken
         };
       }
 
-      var token = _jwtTokenGenerator.GenerateAccessToken(user);
-
       user.IsLoggedIn = true;
+
+      var token = _jwtTokenGenerator.GenerateAccessToken(user);
 
       var refreshToken = new RefreshToken
       {
-        Id = Guid.NewGuid(),
+        Id = Guid.CreateVersion7(),
         Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
         UserId = user.Id,
         ExpiresIn = DateTime.UtcNow.AddDays(7),
         IsRevoked = false
       };
 
-      await _userRepository.UpdateAsync(user);
-      await _refreshTokenRepository.AddAsync(refreshToken);
-      await _unitOfWork.SaveChangesAsync();
+      await _userRepository.UpdateAsync(user, cancellationToken);
+      await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
+      await _unitOfWork.SaveChangesAsync(cancellationToken);
 
       return new LoginResponseModel
       {
         RequiresTwoFactor = false,
-        Email = model.Email,
+        EmailOrUsername = model.EmailOrUsername,
         ExpiresIn = 7,
         AccessToken = token,
         Message = "Login Successful!",

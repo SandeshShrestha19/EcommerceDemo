@@ -19,6 +19,12 @@
 # Mono auto generated files
 mono_crash.*
 
+bin/
+obj/
+
+**/bin/
+**/obj/
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
@@ -146,6 +152,9 @@ _TeamCity*
 # DotCover is a Code Coverage Tool
 *.dotCover
 
+**/bin/
+**/obj/
+
 # AxoCover is a Code Coverage Tool
 .axoCover/*
 !.axoCover/settings.json
@@ -221,6 +230,9 @@ csx/
 # Microsoft Azure Emulator
 ecf/
 rcf/
+
+bin/
+obj/
 
 # Windows Store app package directories and files
 AppPackages/

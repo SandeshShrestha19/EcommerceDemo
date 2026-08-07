@@ -7,4 +7,5 @@ public class AddProductModel
     public decimal Price { get; set; }
     public int Stock { get; set; }
     public Guid CategoryId { get; set; }
+    public ICollection<ProductImageModel> ProductImages { get; set; } = new List<ProductImageModel>();
 }

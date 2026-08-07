@@ -1,5 +1,0 @@
-C:\Users\sande\Desktop\.net-vscode\Practise\src\Infrastructure\ECommerce.Infrastructure\obj\Debug\net9.0\ECommerce.Infrastructure.csproj.AssemblyReference.cache
-C:\Users\sande\Desktop\.net-vscode\Practise\src\Infrastructure\ECommerce.Infrastructure\obj\Debug\net9.0\ECommerce.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\sande\Desktop\.net-vscode\Practise\src\Infrastructure\ECommerce.Infrastructure\obj\Debug\net9.0\ECommerce.Infrastructure.AssemblyInfoInputs.cache
-C:\Users\sande\Desktop\.net-vscode\Practise\src\Infrastructure\ECommerce.Infrastructure\obj\Debug\net9.0\ECommerce.Infrastructure.AssemblyInfo.cs
-C:\Users\sande\Desktop\.net-vscode\Practise\src\Infrastructure\ECommerce.Infrastructure\obj\Debug\net9.0\ECommerce.Infrastructure.csproj.CoreCompileInputs.cache

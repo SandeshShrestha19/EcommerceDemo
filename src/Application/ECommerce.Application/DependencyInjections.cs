@@ -1,4 +1,5 @@
 using ECommerce.Applcation.Helpers;
+using ECommerce.Application.Helpers;
 using ECommerce.Application.UseCase;
 using ECommerce.Application.UseCases;
 using ECommerce.Domain.Ports;
@@ -25,6 +26,9 @@ public static class DependencyInjection
     services.AddScoped<IProductFacade, ProductFacade>();
     services.AddScoped<IOrderFacade, OrderFacade>();
     services.AddScoped<ICategoryFacade, CategoryFacade>();
+    services.AddScoped<GoogleAuthService>();
+    services.AddScoped<IGoogleAuthUseCase, GoogleAuthUseCase>();
+    services.AddHttpClient<IGeminiFacade, GeminiFacade>();
 
     return services;
   }

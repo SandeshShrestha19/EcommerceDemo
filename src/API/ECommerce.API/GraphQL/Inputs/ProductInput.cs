@@ -4,5 +4,6 @@ public record ProductInput
    string Description,
    int Stock,
    decimal Price,
-   Guid CategoryId
+   Guid CategoryId,
+   List<ProductImageModel> ProductImages
 );

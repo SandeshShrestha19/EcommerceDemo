@@ -15,14 +15,14 @@ public class SetUserActiveStatusUseCase : ISetUserActiveStatusUseCase
     _unitOfWork = unitOfWork;
   }
 
-  public async Task ExecuteAsync(Guid userId, bool isActive)
+  public async Task ExecuteAsync(Guid userId, bool isActive, CancellationToken cancellationToken = default)
   {
     try
     {
-      var user = await _userRepository.GetByIdAsync(userId) ?? throw NotFoundException.User();
+      var user = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw NotFoundException.User();
       user.IsActive = isActive;
-      await _userRepository.UpdateAsync(user);
-      await _unitOfWork.SaveChangesAsync();
+      await _userRepository.UpdateAsync(user, cancellationToken);
+      await _unitOfWork.SaveChangesAsync(cancellationToken);
       _logger.LogInformation($"User {user.Email} IsActive set to {isActive}");
     }
     catch(Exception ex)

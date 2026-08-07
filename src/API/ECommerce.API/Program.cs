@@ -3,13 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using ECommerce.Domain.Ports;
-using OtpNet;
-using QRCoder;
+using ECommerce.Domain.Models;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthenticationDependencies(builder.Configuration);
 builder.Services.AddAuthorizationDependencies();
@@ -20,31 +17,33 @@ builder.Services.AddScoped<ResponseMapper>();
 builder.Services.AddGraphQLDependencies();
 builder.Services.AddCorsDependencies(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
+builder.Services.Configure<GeminiOptionsModel>(
+    builder.Configuration.GetSection("Gemini"));
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure();
+        });
+});
 
 var app = builder.Build();
 
-//one secret key per client
-byte[] secretKey = KeyGeneration.GenerateRandomKey(OtpHashMode.Sha256);
-string base32SecretKey = Base32Encoding.ToString(secretKey);
-const string issuer = "OtpAuthDemo";
-const string user = "user@example.com";
-app.MapGet("otp/qrcode", () =>
+using (var scope = app.Services.CreateScope())
 {
-    string escapedIssuer = Uri.EscapeDataString(issuer);
-    string escapedUser = Uri.EscapeDataString(user);
-    string otpUri = $"otpauth://totp/{escapedIssuer}:{escapedUser}?secret={base32SecretKey}&issuer={escapedIssuer}&digits=6&period=30";
+    var db = scope.ServiceProvider
+        .GetRequiredService<AppDbContext>();
 
-    using var qrGenerator = new QRCodeGenerator();
-    using var qrCodeData = qrGenerator.CreateQrCode(otpUri, QRCodeGenerator.ECCLevel.Q);
-    using var qrCode = new PngByteQRCode(qrCodeData);
-    byte[] qrCodeImage = qrCode.GetGraphic(6);
-
-    return Results.File(qrCodeImage, "image/png");
-});
-
-
+    db.Database.Migrate();
+}
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseCors("AllowFrontend");
 app.Use(async (context, next) =>
 {
     if (context.User.Identity?.IsAuthenticated == true)
@@ -91,16 +90,5 @@ app.Use(async (context, next) =>
 });
 
 app.MapGraphQL();
-app.MapPost("otp/validate", (ValidateOtpRequest request) =>
-{
-    var totp = new Totp(secretKey);
-    var isValid = totp.VerifyTotp(request.Code, out var timeStepMatched, VerificationWindow.RfcSpecifiedNetworkDelay);
-
-    return Results.Ok(new {isValid});
-});
-    
-
 
 app.Run();
-
-internal record ValidateOtpRequest(string Code);

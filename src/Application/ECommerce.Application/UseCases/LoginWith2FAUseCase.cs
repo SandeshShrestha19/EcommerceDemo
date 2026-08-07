@@ -27,13 +27,13 @@ public class LoginWith2FAUseCase : ILoginWith2FAUseCase
     _logger = logger;
   }
 
-  public async Task<LoginResponseModel> ExecuteAsync(string tempToken, string code)
+  public async Task<LoginResponseModel> ExecuteAsync(string tempToken, string code, CancellationToken cancellationToken = default)
   {
     try
     {
       var userId = _jwtTokenGenerator.ValidateTempToken(tempToken);
 
-      var user = await _userRepository.GetByIdAsync(userId) ?? throw NotFoundException.User();
+      var user = await _userRepository.GetByIdAsync(userId, cancellationToken) ?? throw NotFoundException.User();
 
       if (string.IsNullOrWhiteSpace(user.TwoFactorSecret))
       {
@@ -49,7 +49,7 @@ public class LoginWith2FAUseCase : ILoginWith2FAUseCase
 
       var refreshToken = new RefreshToken
       {
-        Id = Guid.NewGuid(),
+        Id = Guid.CreateVersion7(),
         Token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)),
         UserId = user.Id,
         CreatedAt = DateTime.UtcNow,
@@ -57,21 +57,21 @@ public class LoginWith2FAUseCase : ILoginWith2FAUseCase
         IsRevoked = false
       };
       user.IsLoggedIn = true;
-      await _userRepository.UpdateAsync(user);
-      await _refreshTokenRepository.AddAsync(refreshToken);
-      await _unitOfWork.SaveChangesAsync();
+      await _userRepository.UpdateAsync(user, cancellationToken);
+      await _refreshTokenRepository.AddAsync(refreshToken, cancellationToken);
+      await _unitOfWork.SaveChangesAsync(cancellationToken);
 
       return new LoginResponseModel
       {
         RequiresTwoFactor = false,
-        Email = user.Email,
+        EmailOrUsername = (user.Email is not null) ? user.Email : user.Username,
         RefreshToken = refreshToken.Token,
         AccessToken = token,
         ExpiresIn = 7,
         Message = "Login successful!"
       };
     }
-    catch(Exception ex)
+    catch (Exception ex)
     {
       _logger.LogError(ex, "Failed to login!");
       throw;

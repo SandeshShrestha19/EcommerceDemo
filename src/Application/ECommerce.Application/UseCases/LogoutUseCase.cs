@@ -2,7 +2,7 @@ using ECommerce.Domain.Exceptions;
 using ECommerce.Domain.Ports;
 using Microsoft.Extensions.Logging;
 
-public class LogoutUseCase: ILogoutUseCase
+public class LogoutUseCase : ILogoutUseCase
 {
   private readonly IUserRepository _userRepository;
   private readonly IRefreshTokenRepository _refreshTokenRepository;
@@ -19,33 +19,35 @@ public class LogoutUseCase: ILogoutUseCase
     _blacklistedTokenRepository = blacklistedTokenRepository;
   }
 
-  public async Task ExecuteAsync(Guid id, string refreshToken, string jti, DateTime expiresAt)
+  public async Task ExecuteAsync(Guid id, string refreshToken, string jti, DateTime expiresAt, CancellationToken cancellationToken = default)
   {
     try
     {
-      var user = await _userRepository.GetByIdAsync(id) ?? throw NotFoundException.User();
+      var user = await _userRepository.GetByIdAsync(id, cancellationToken) ?? throw NotFoundException.User();
 
       user.IsLoggedIn = false;
-      await _userRepository.UpdateAsync(user);
+      await _userRepository.UpdateAsync(user, cancellationToken);
 
-      var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken) ?? throw NotFoundException.RefreshToken();
+      var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken, cancellationToken) ?? throw NotFoundException.RefreshToken();
 
       storedToken.IsRevoked = true;
-      await _refreshTokenRepository.UpdateASync(storedToken);
+      await _refreshTokenRepository.UpdateASync(storedToken, cancellationToken);
 
       await _blacklistedTokenRepository.AddAsync(new BlacklistedToken
       {
-        Id = Guid.NewGuid(),
+        Id = Guid.CreateVersion7(),
         Jti = jti,
         ExpiresAt = expiresAt,
         CreatedAt = DateTime.UtcNow
-      });
-      
-      await _unitOfWork.SaveChangesAsync();
+      }, cancellationToken);
 
-    }catch(Exception ex)
+      await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+    }
+    catch (Exception ex)
     {
-      _logger.LogInformation(ex, "Failed to log out!");
+      _logger.LogError(ex, "Failed to log out!");
+      throw;
     }
   }
 }

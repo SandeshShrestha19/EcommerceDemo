@@ -1,16 +1,28 @@
 public static class AuthorizationExtension
 {
-  public static IServiceCollection AddAuthorizationDependencies(this IServiceCollection services)
+  public static IServiceCollection AddAuthorizationDependencies(
+    this IServiceCollection services)
   {
     services.AddAuthorization(options =>
     {
-        options.AddPolicy("ActiveUser", policy =>
-        {
-            policy.RequireAssertion(context =>
-                context.User.HasClaim(c => c.Type == "IsActive" && c.Value == "true") &&
-                context.User.HasClaim(c => c.Type == "IsLoggedIn" && c.Value == "true"));
-        });
+      options.AddPolicy("ActiveUser", policy =>
+      {
+        policy.RequireAuthenticatedUser();
+
+        policy.RequireAssertion(context =>
+          {
+            var value = context.User
+                  .FindFirst("IsActive")
+                  ?.Value;
+
+            return bool.TryParse(
+                         value,
+                         out var isActive)
+                     && isActive;
+          });
+      });
     });
+
     return services;
   }
 }

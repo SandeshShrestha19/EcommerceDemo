@@ -14,9 +14,9 @@ public class Enable2FAUseCase : IEnable2FAUseCase
     _twoFactorService = twoFactorService;
   }
 
-  public async Task<Enable2FAResponseModel> ExecuteAsync(Guid id)
+  public async Task<Enable2FAResponseModel> ExecuteAsync(Guid id, CancellationToken cancellationToken = default)
   {
-    var user = await _userRepository.GetByIdAsync(id) ?? throw new Exception($"User with Id: {id} not found!");
+    var user = await _userRepository.GetByIdAsync(id, cancellationToken) ?? throw new Exception($"User with Id: {id} not found!");
 
     var secretKey = _twoFactorService.GenerateSecretKey() ?? throw new Exception("Failed to generate secret key!");
 
@@ -25,8 +25,8 @@ public class Enable2FAUseCase : IEnable2FAUseCase
     var qrCodeImage = _twoFactorService.GenerateQrCodeImage(qrCodeUri) ?? throw new Exception("Failed to generate Qr code image");
 
     user.TwoFactorSecret = secretKey;
-    await _userRepository.UpdateAsync(user);
-    await _unitOfWork.SaveChangesAsync();
+    await _userRepository.UpdateAsync(user, cancellationToken);
+    await _unitOfWork.SaveChangesAsync(cancellationToken);
 
     return new Enable2FAResponseModel
     {

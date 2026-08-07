@@ -22,11 +22,11 @@ public class RefreshTokenUseCase : IRefreshTokenUseCase
     _jwtTokenGenerator = jwtTokenGenerator;
   }
 
-  public async Task<string> ExecuteAsync(string refreshToken)
+  public async Task<string> ExecuteAsync(string refreshToken, CancellationToken cancellationToken = default)
   {
     try
     {
-      var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken) ??  throw NotFoundException.RefreshToken();
+      var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken, cancellationToken) ??  throw NotFoundException.RefreshToken();
 
       if (storedToken.ExpiresIn < DateTime.UtcNow)
       {
@@ -38,7 +38,12 @@ public class RefreshTokenUseCase : IRefreshTokenUseCase
         throw new ValidationException("Refresh token has been revoked! Please login again.");
       }
 
-      var user = await _userRepository.GetByIdAsync(storedToken.UserId) ??  throw NotFoundException.User();
+      var user = await _userRepository.GetByIdAsync(storedToken.UserId, cancellationToken) ??  throw NotFoundException.User();
+
+      if (!user.IsActive)
+      {
+        throw BusinessException.AccountDisabled();
+      }
 
       var newAccessToken = _jwtTokenGenerator.GenerateAccessToken(user);
       return newAccessToken;

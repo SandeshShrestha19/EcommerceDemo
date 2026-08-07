@@ -8,13 +8,13 @@ public static class DependencyInjection
   public static IServiceCollection AddInfrastrutureDependencies(this IServiceCollection services)
   {
     services.AddScoped<IUnitOfWork, UnitOfWork>();
-    services.AddScoped<IProductRepository, ProductAdapter>();
-    services.AddScoped<IOrderRepository, OrderAdapter>();
-    services.AddScoped<IUserRepository, UserAdapter>();
-    services.AddScoped<IRefreshTokenRepository, RefreshTokenAdapter>();
-    services.AddScoped<IBlacklistedTokenRepository, BlacklistedTokenAdapter>();
-    services.AddScoped<ICategoryRepository, CategoryAdapter>();
-    services.AddScoped<UserActivityJob>();
+    services.AddScoped<IProductRepository, ProductRepository>();
+    services.AddScoped<IOrderRepository, OrderRepository>();
+    services.AddScoped<IUserRepository, UserRepository>();
+    services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+    services.AddScoped<IBlacklistedTokenRepository, BlacklistedTokenRepository>();
+    services.AddScoped<ICategoryRepository, CategoryRepository>();
+    services.AddHostedService<UserActivityJob>();
     return services;
   }
 }

@@ -4,5 +4,5 @@ namespace ECommerce.Domain.Ports;
 
 public interface IRefreshTokenUseCase
 {
-  Task<string> ExecuteAsync(string refreshToken);
+  Task<string> ExecuteAsync(string refreshToken, CancellationToken cancellationToken = default);
 }

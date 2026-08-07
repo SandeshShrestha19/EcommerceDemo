@@ -1,4 +1,4 @@
 public interface IBlacklistedTokenUseCase
 {
-  Task ExecuteAsync(AddBlacklistedTokenModel addModel);
+  Task ExecuteAsync(AddBlacklistedTokenModel addModel, CancellationToken cancellationToken = default);
 }

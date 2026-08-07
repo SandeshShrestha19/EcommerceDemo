@@ -16,7 +16,7 @@ public static class GraphQLExtension
       .AddFiltering()
       .AddSorting()
       .AddErrorFilter<AuthorizationErrorFilter>()
-      .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = true);
+      .ModifyRequestOptions(opt => opt.IncludeExceptionDetails = false);
 
     return services;
   }

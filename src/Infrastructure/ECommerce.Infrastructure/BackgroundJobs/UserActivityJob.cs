@@ -15,7 +15,7 @@ public class UserActivityJob : BackgroundService
     _logger = logger;
   }
 
-  protected override async Task ExecuteAsync(CancellationToken stoppingToken) //stoppingToken stops job when app shuts down
+  protected override async Task ExecuteAsync(CancellationToken stoppingToken)
   {
     _logger.LogInformation("UserActivityJob started!");
 
@@ -23,7 +23,7 @@ public class UserActivityJob : BackgroundService
     {
       try
       {
-        await DoWorkAsync();
+        await DoWorkAsync(stoppingToken);
       }
       catch (Exception ex)
       {
@@ -34,30 +34,30 @@ public class UserActivityJob : BackgroundService
     }
   }
 
-  private async Task DoWorkAsync()
+  private async Task DoWorkAsync(CancellationToken cancellationToken)
   {
     using var scope = _serviceScopeFactory.CreateScope(); //create scope to db
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>(); //access dbContext
 
-    var inactiveTokens = await context.RefreshTokens.Where(x => x.IsRevoked == true || x.ExpiresIn<DateTime.UtcNow).ToListAsync();
-    
-    var inactiveUserIds = inactiveTokens.Select(x => x.Id).Distinct().ToList();
+    var inactiveTokens = await context.RefreshTokens.Where(x => x.IsRevoked == true || x.ExpiresIn < DateTime.UtcNow).ToListAsync(cancellationToken);
 
-    foreach(var userId in inactiveUserIds)
+    var inactiveUserIds = inactiveTokens.Select(x => x.UserId).Distinct().ToList();
+
+    foreach (var userId in inactiveUserIds)
     {
-      var hasActiveToken = await context.RefreshTokens.AnyAsync(x => x.UserId == userId && x.IsRevoked == false && x.ExpiresIn > DateTime.UtcNow);
+      var hasActiveToken = await context.RefreshTokens.AnyAsync(x => x.UserId == userId && x.IsRevoked == false && x.ExpiresIn > DateTime.UtcNow, cancellationToken);
 
       if (!hasActiveToken)
       {
-        var user = await context.Users.FindAsync(userId);
-        if(user != null && user.IsLoggedIn)
+        var user = await context.Users.FindAsync(new object[] { userId }, cancellationToken);
+        if (user != null && user.IsLoggedIn)
         {
           user.IsLoggedIn = false;
           _logger.LogInformation($"User {user.Email} set to inactive!");
         }
       }
     }
-    var expiredTokens = await context.BlacklistedTokens.Where(x => x.ExpiresAt < DateTime.UtcNow).ToListAsync();
+    var expiredTokens = await context.BlacklistedTokens.Where(x => x.ExpiresAt < DateTime.UtcNow).ToListAsync(cancellationToken);
 
     if (expiredTokens.Any())
     {
@@ -65,6 +65,6 @@ public class UserActivityJob : BackgroundService
       _logger.LogInformation($"Cleaned up {expiredTokens.Count()} expired blacklisted tokens!");
     }
 
-    await context.SaveChangesAsync();
+    await context.SaveChangesAsync(cancellationToken);
   }
 }

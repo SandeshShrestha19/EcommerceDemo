@@ -6,6 +6,7 @@ public class ProductResponseModel
   public string? Description { get; set; }
   public int? Stock { get; set; }
   public Guid CategoryId { get; set; }
+  public ICollection<ProductImage>? ProductImages { get; set; }
   public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
 }

@@ -11,6 +11,7 @@ public class Product
   public int Stock { get; set; } = 0;
   public Guid CategoryId { get; set; }
   public Category? Category { get; set; }
+  public ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
   public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
   public DateTimeOffset ModifiedAt { get; set; }
 

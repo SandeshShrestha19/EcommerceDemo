@@ -52,6 +52,8 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Order>(entity =>
         {
             entity.HasKey(o => o.Id);
+            entity.Property(o => o.OrderStatus)
+                  .HasConversion<string>();
             entity.HasOne(o => o.User)
                   .WithMany(u => u.Orders)
                   .HasForeignKey(o => o.UserId);
@@ -67,7 +69,7 @@ public class AppDbContext : DbContext
                 Role = "Admin",
                 IsActive = true,
                 Password = "AQAAAAIAAYagAAAAENWUApdzPmQWudXPT/eH43MRNkXC5P5E3Uq5JF4uSxxuCaf2pXJY5EzEFzUtY+VnYA==",
-                TwoFactorEnabled = true
+                TwoFactorEnabled = false
             }
         ]);
 
