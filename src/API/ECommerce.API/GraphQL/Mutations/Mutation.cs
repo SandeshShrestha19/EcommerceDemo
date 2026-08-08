@@ -218,8 +218,8 @@ public class Mutation
                 new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = false, // true in production
-                    SameSite = SameSiteMode.Strict,
+                    Secure = true, // required with SameSite=None
+                    SameSite = SameSiteMode.None, // allow cross-site (frontend + API on different hosts)
                     Expires = DateTimeOffset.UtcNow.AddMinutes(7),
                     Path = "/"
                 });
@@ -230,8 +230,8 @@ public class Mutation
                 new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = false, // true in production
-                    SameSite = SameSiteMode.Strict,
+                    Secure = true, // required with SameSite=None
+                    SameSite = SameSiteMode.None, // allow cross-site (frontend + API on different hosts)
                     Expires = DateTimeOffset.UtcNow.AddDays(7),
                     Path = "/"
                 });
@@ -259,8 +259,20 @@ public class Mutation
 
         await logoutUseCase.ExecuteAsync(Guid.Parse(userId!), refreshToken, jti!, tokenExpiry, cancellationToken);
 
-        httpContextAccessor.HttpContext.Response.Cookies.Delete("token");
-        httpContextAccessor.HttpContext.Response.Cookies.Delete("refreshToken");
+        // The delete must match the cookie's attributes (SameSite/Secure) or
+        // the browser won't clear the cross-site cookies it has stored.
+        httpContextAccessor.HttpContext.Response.Cookies.Delete("token", new CookieOptions
+        {
+            Path = "/",
+            Secure = true,
+            SameSite = SameSiteMode.None
+        });
+        httpContextAccessor.HttpContext.Response.Cookies.Delete("refreshToken", new CookieOptions
+        {
+            Path = "/",
+            Secure = true,
+            SameSite = SameSiteMode.None
+        });
 
         return true;
     }
@@ -287,8 +299,8 @@ public class Mutation
             new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddMinutes(7)
             });
 
@@ -345,8 +357,8 @@ public class Mutation
             "token", result.AccessToken!, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddMinutes(7)
             });
 
@@ -354,8 +366,8 @@ public class Mutation
             "refreshToken", result.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddDays(7)
             });
 
@@ -443,8 +455,8 @@ public class Mutation
             "token", result.AccessToken!, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddMinutes(7)
             });
 
@@ -452,8 +464,8 @@ public class Mutation
             "refreshToken", result.RefreshToken!, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Strict,
+                Secure = true,
+                SameSite = SameSiteMode.None,
                 Expires = DateTimeOffset.UtcNow.AddDays(7)
             });
 
