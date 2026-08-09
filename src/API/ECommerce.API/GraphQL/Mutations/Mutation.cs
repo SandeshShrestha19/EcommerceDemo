@@ -331,13 +331,14 @@ public class Mutation
     public async Task<Enable2FAResponseModel> Setup2FA(
         [Service] IEnable2FAUseCase enable2FAUseCase,
         [Service] IHttpContextAccessor httpContextAccessor,
+        string password,
         CancellationToken cancellationToken)
     {
         var userId = httpContextAccessor.HttpContext!.User
             .FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? throw new Exception("User not found!");
 
-        return await enable2FAUseCase.ExecuteAsync(Guid.Parse(userId), cancellationToken);
+        return await enable2FAUseCase.ExecuteAsync(Guid.Parse(userId), password, cancellationToken);
     }
 
     // Verify and enable 2FA
