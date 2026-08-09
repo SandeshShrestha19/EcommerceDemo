@@ -4,6 +4,7 @@ using ECommerce.Domain.Entities;
 using ECommerce.Domain.Ports;
 using ECommerce.Domain.Exceptions;
 using Ecommerce.Domain.Models;
+using HotChocolate;
 using HotChocolate.Authorization;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
@@ -456,7 +457,18 @@ public class Mutation
         - No exaggerated claims
         """;
 
-        return await geminiFacade.GenerateTextAsync(prompt, cancellationToken);
+        try
+        {
+            return await geminiFacade.GenerateTextAsync(prompt, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            // Surface the real reason (missing key, bad model, quota, blocked
+            // content, ...) instead of a generic "Unexpected Execution Error".
+            throw new GraphQLException(ErrorBuilder.New()
+                .SetMessage($"AI description generation failed: {ex.Message}")
+                .Build());
+        }
     }
 
     [AllowAnonymous]
