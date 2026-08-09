@@ -178,13 +178,6 @@ public class OrderFacade : IOrderFacade
 
         order.TotalPrice = order.OrderItems.Sum(oi => oi.UnitPrice * oi.Quantity);
 
-        if (model.OrderStatus.HasValue && model.OrderStatus.Value != order.OrderStatus)
-        {
-          EnsureCanManageOrderStatus(currentUser);
-          EnsureValidStatusTransition(order.OrderStatus, model.OrderStatus.Value);
-          order.OrderStatus = model.OrderStatus.Value;
-        }
-
         await _orderRepository.UpdateAsync(order, cancellationToken);
       }, cancellationToken);
     }

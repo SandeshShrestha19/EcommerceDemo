@@ -148,7 +148,6 @@ public class Mutation
     {
         await orderFacade.UpdateAsync(id, new UpdateOrderModel
         {
-            OrderStatus = updateOrderInput.OrderStatus,
             Items = updateOrderInput.Items.Select(item => new UpdateOrderItemModel
             {
                 ProductId = item.ProductId,
