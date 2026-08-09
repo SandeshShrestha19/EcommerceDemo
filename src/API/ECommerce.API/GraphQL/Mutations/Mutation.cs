@@ -437,7 +437,7 @@ public class Mutation
         return true;
     }
 
-    [Authorize(Roles = ["Admin"])]
+    [Authorize]
     public async Task<string> GenerateProductDescription(
     [Service] IGeminiFacade geminiFacade,
     string productName,

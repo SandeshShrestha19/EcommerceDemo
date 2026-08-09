@@ -17,14 +17,16 @@ public class LoginUseCase : ILoginUseCase
   private readonly IRefreshTokenRepository _refreshTokenRepository;
   private readonly IUnitOfWork _unitOfWork;
   private readonly ILogger<LoginUseCase> _logger;
+  private readonly TwoFactorService _twoFactorService;
 
-  public LoginUseCase(IUserRepository userRepository, IUnitOfWork unitOfWork, ILogger<LoginUseCase> logger, IRefreshTokenRepository refreshTokenRepository, JwtTokenGenerator jwtTokenGenerator)
+  public LoginUseCase(IUserRepository userRepository, IUnitOfWork unitOfWork, ILogger<LoginUseCase> logger, IRefreshTokenRepository refreshTokenRepository, JwtTokenGenerator jwtTokenGenerator, TwoFactorService twoFactorService)
   {
     _userRepository = userRepository;
     _logger = logger;
     _unitOfWork = unitOfWork;
     _refreshTokenRepository = refreshTokenRepository;
     _jwtTokenGenerator = jwtTokenGenerator;
+    _twoFactorService = twoFactorService;
   }
 
   public async Task<LoginResponseModel> ExecuteAsync(LoginModel model, CancellationToken cancellationToken = default)
@@ -52,11 +54,24 @@ public class LoginUseCase : ILoginUseCase
       var tempToken = _jwtTokenGenerator.GenerateTempToken(user);
       if (user.TwoFactorEnabled)
       {
+        // Show the authenticator-app QR on the login screen along with the code
+        // prompt, so a freshly-enabled account can scan it the first time it logs in.
+        string? qrCodeImage = null;
+        string? secretKey = null;
+        if (!string.IsNullOrWhiteSpace(user.TwoFactorSecret))
+        {
+          secretKey = user.TwoFactorSecret;
+          qrCodeImage = _twoFactorService.GenerateQrCodeImage(
+              _twoFactorService.GenerateQrCodeUri(user.Email, user.TwoFactorSecret));
+        }
+
         return new LoginResponseModel
         {
           RequiresTwoFactor = true,
           EmailOrUsername = model.EmailOrUsername,
-          TempToken = tempToken
+          TempToken = tempToken,
+          QrCodeImage = qrCodeImage,
+          SecretKey = secretKey
         };
       }
 

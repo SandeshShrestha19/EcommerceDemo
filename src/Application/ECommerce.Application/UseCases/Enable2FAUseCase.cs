@@ -33,9 +33,9 @@ public class Enable2FAUseCase : IEnable2FAUseCase
     var qrCodeImage = _twoFactorService.GenerateQrCodeImage(qrCodeUri) ?? throw new Exception("Failed to generate Qr code image");
 
     user.TwoFactorSecret = secretKey;
-    // Keep 2FA off until the user verifies the new code, so an interrupted
-    // re-setup never leaves the account locked to an unconfirmed secret.
-    user.TwoFactorEnabled = false;
+    // Confirming with the account password is enough to enable 2FA; the user
+    // scans the QR and enters the code the next time they log in.
+    user.TwoFactorEnabled = true;
     await _userRepository.UpdateAsync(user, cancellationToken);
     await _unitOfWork.SaveChangesAsync(cancellationToken);
 
