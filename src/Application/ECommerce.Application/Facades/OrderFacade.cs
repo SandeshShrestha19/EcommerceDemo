@@ -177,7 +177,13 @@ public class OrderFacade : IOrderFacade
         }
 
         order.TotalPrice = order.OrderItems.Sum(oi => oi.UnitPrice * oi.Quantity);
-        order.OrderStatus = model.OrderStatus ?? order.OrderStatus;
+
+        if (model.OrderStatus.HasValue && model.OrderStatus.Value != order.OrderStatus)
+        {
+          EnsureCanManageOrderStatus(currentUser);
+          EnsureValidStatusTransition(order.OrderStatus, model.OrderStatus.Value);
+          order.OrderStatus = model.OrderStatus.Value;
+        }
 
         await _orderRepository.UpdateAsync(order, cancellationToken);
       }, cancellationToken);
@@ -185,6 +191,31 @@ public class OrderFacade : IOrderFacade
     catch (Exception ex)
     {
       _logger.LogInformation(ex, "Error while updating order!");
+      throw;
+    }
+  }
+
+  public async Task UpdateOrderStatusAsync(Guid id, OrderStatus newStatus, CurrentUser currentUser, CancellationToken cancellationToken = default)
+  {
+    EnsureCanManageOrderStatus(currentUser);
+
+    try
+    {
+      await _unitOfWork.ExecuteInTransactionAsync(async () =>
+      {
+        var order = await _orderRepository.GetByIdAsync(id, cancellationToken) ?? throw NotFoundException.Order();
+
+        if (newStatus != order.OrderStatus)
+        {
+          EnsureValidStatusTransition(order.OrderStatus, newStatus);
+          order.OrderStatus = newStatus;
+          await _orderRepository.UpdateAsync(order, cancellationToken);
+        }
+      }, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Failed to update order status!");
       throw;
     }
   }
@@ -235,6 +266,26 @@ public class OrderFacade : IOrderFacade
     if (!currentUser.IsAdmin && order.UserId != currentUser.Id)
     {
       throw new ForbiddenException("You do not have access to this order!");
+    }
+  }
+
+  // Only Admins/Managers may change an order's status; customers must not be
+  // able to mark their own orders as Shipped/Delivered/Cancelled.
+  private static void EnsureCanManageOrderStatus(CurrentUser currentUser)
+  {
+    var role = currentUser.Role;
+    if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(role, "Manager", StringComparison.OrdinalIgnoreCase))
+    {
+      throw new ForbiddenException("Only admins or managers can update order status!");
+    }
+  }
+
+  private static void EnsureValidStatusTransition(OrderStatus current, OrderStatus next)
+  {
+    if (!OrderStatusTransition.CanTransition(current, next))
+    {
+      throw new BusinessException($"Cannot change order status from {current} to {next}!");
     }
   }
 }

@@ -157,6 +157,20 @@ public class Mutation
         return true;
     }
 
+    // Change only the order status (lifecycle). Admins/Managers only; the
+    // transition is validated against the order-status lifecycle.
+    [Authorize(Roles = ["Admin", "Manager"])]
+    public async Task<bool> UpdateOrderStatus(
+    [Service] IOrderFacade orderFacade,
+    [Service] IHttpContextAccessor httpContextAccessor,
+    Guid id,
+    OrderStatus orderStatus,
+    CancellationToken cancellationToken)
+    {
+        await orderFacade.UpdateOrderStatusAsync(id, orderStatus, CurrentUserResolver.From(httpContextAccessor), cancellationToken);
+        return true;
+    }
+
     [AllowAnonymous]
     public async Task<LoginResponseModel> Login([Service] ILoginUseCase loginUseCase, [Service] IHttpContextAccessor httpContextAccessor, string emailOrUsername,
     string password, CancellationToken cancellationToken)

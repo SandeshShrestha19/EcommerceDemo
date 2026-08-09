@@ -39,6 +39,11 @@ public class LoginWith2FAUseCase : ILoginWith2FAUseCase
       {
         throw new BusinessException("2FA not set up!");
       }
+      if (!user.IsActive)
+      {
+        throw BusinessException.AccountDisabled();
+      }
+
       var isValid = _twoFactorService.VerifyCode(user.TwoFactorSecret, code);
       if (!isValid)
       {

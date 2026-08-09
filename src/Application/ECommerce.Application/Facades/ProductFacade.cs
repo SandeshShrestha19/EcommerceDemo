@@ -7,12 +7,21 @@ using Microsoft.Extensions.Logging;
 public class ProductFacade : IProductFacade
 {
   private readonly IProductRepository _productRepository;
+  private readonly ICategoryRepository _categoryRepository;
+  private readonly IGeminiFacade _geminiFacade;
   private readonly ILogger<ProductFacade> _logger;
   private readonly IUnitOfWork _unitOfWork;
 
-  public ProductFacade(IProductRepository productRepository, ILogger<ProductFacade> logger, IUnitOfWork unitOfWork)
+  public ProductFacade(
+    IProductRepository productRepository,
+    ICategoryRepository categoryRepository,
+    IGeminiFacade geminiFacade,
+    ILogger<ProductFacade> logger,
+    IUnitOfWork unitOfWork)
   {
     _productRepository = productRepository;
+    _categoryRepository = categoryRepository;
+    _geminiFacade = geminiFacade;
     _logger = logger;
     _unitOfWork = unitOfWork;
   }
@@ -36,11 +45,18 @@ public class ProductFacade : IProductFacade
         throw new ValidationException("Stock cannot be negative");
       }
 
+      // If no description was supplied, auto-generate one via Gemini.
+      var description = model.Description;
+      if (string.IsNullOrWhiteSpace(description))
+      {
+        description = await GenerateDescriptionAsync(model.Name, model.CategoryId, cancellationToken);
+      }
+
       var product = new Product
       {
         Id = Guid.CreateVersion7(),
         Name = model.Name,
-        Description = model.Description,
+        Description = description,
         Price = model.Price,
         Stock = model.Stock,
         CategoryId = model.CategoryId,
@@ -125,7 +141,13 @@ public class ProductFacade : IProductFacade
       var product = await _productRepository.GetByIdAsync(id, cancellationToken) ?? throw NotFoundException.Product();
 
       product.Name = updateModel.Name ?? product.Name;
-      product.Description = updateModel.Description ?? product.Description;
+      if (updateModel.Description != null)
+      {
+        // An explicitly empty description means "regenerate it with Gemini".
+        product.Description = string.IsNullOrWhiteSpace(updateModel.Description)
+            ? await GenerateDescriptionAsync(product.Name, product.CategoryId, cancellationToken)
+            : updateModel.Description;
+      }
       if (updateModel.Price.HasValue)
       {
         if (updateModel.Price.Value <= 0)
@@ -171,6 +193,35 @@ public class ProductFacade : IProductFacade
     product!.DecreaseStock(decreasingQuantity);
     await _productRepository.UpdateAsync(product, cancellationToken);
     await _unitOfWork.SaveChangesAsync(cancellationToken);
+  }
+
+  // Builds a short marketing copy from the product name + category via Gemini.
+  // A failure (missing API key, network, etc.) degrades gracefully: it logs a
+  // warning and leaves the description empty instead of blocking the request.
+  private async Task<string> GenerateDescriptionAsync(string productName, Guid categoryId, CancellationToken cancellationToken)
+  {
+    try
+    {
+      var category = await _categoryRepository.GetByIdAsync(categoryId, cancellationToken);
+      var prompt = $"""
+        Generate a concise e-commerce product description.
+
+        Product: {productName}
+        Category: {category?.Name ?? "General"}
+
+        Requirements:
+        - 2 to 3 sentences
+        - Professional tone
+        - No exaggerated claims
+        """;
+
+      return await _geminiFacade.GenerateTextAsync(prompt, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Gemini description generation failed for product '{ProductName}'; using an empty description.", productName);
+      return string.Empty;
+    }
   }
 
 }
