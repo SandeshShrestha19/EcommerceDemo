@@ -31,7 +31,6 @@ public class ResponseMapper
       Name = user.Name,
       Username = user.Username,
       PhoneNumber = user.PhoneNumber,
-      CompanyName = user.CompanyName
     };
   }
 

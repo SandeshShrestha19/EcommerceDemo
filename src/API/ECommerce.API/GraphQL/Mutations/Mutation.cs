@@ -80,7 +80,6 @@ public class Mutation
             Email = userInput.Email,
             Password = userInput.Password,
             Username = userInput.Username,
-            CompanyName = userInput.CompanyName,
             PhoneNumber = userInput.PhoneNumber
         }, cancellationToken);
     }
@@ -106,7 +105,6 @@ public class Mutation
             Name = updateUserInput.Name,
             Email = updateUserInput.Email,
             Password = updateUserInput.Password,
-            CompanyName = updateUserInput.CompanyName,
             PhoneNumber = updateUserInput.PhoneNumber,
             Username = updateUserInput.Username
         }, cancellationToken);

@@ -63,7 +63,6 @@ public class UserFacade : IUserFacade
         IsLoggedIn = false,
         Username = model.Username,
         PhoneNumber = model.PhoneNumber ?? string.Empty,
-        CompanyName = model.CompanyName ?? string.Empty,
         TwoFactorEnabled = false
       };
       return await _userRepository.AddAsync(user, cancellationToken);
@@ -112,7 +111,6 @@ public class UserFacade : IUserFacade
       Orders = x.Orders,
       PhoneNumber = x.PhoneNumber,
       Username = x.Username,
-      CompanyName = x.CompanyName
     });
   }
 
@@ -159,11 +157,6 @@ public class UserFacade : IUserFacade
       if (!string.IsNullOrWhiteSpace(model.PhoneNumber))
       {
         user.PhoneNumber = model.PhoneNumber.Trim();
-      }
-
-      if (!string.IsNullOrWhiteSpace(model.CompanyName))
-      {
-        user.CompanyName = model.CompanyName.Trim();
       }
 
       if (!string.IsNullOrWhiteSpace(model.Password))

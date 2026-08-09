@@ -3,6 +3,5 @@ public record UserInput(
   string Email,
   string Password,
   string PhoneNumber,
-  string Username,
-  string CompanyName
+  string Username
 );
