@@ -19,13 +19,21 @@ public class GeminiFacade : IGeminiFacade
 
   public async Task<string> GenerateTextAsync(string prompt, CancellationToken cancellationToken = default)
   {
-    if (string.IsNullOrWhiteSpace(_options.ApiKey))
+    // The key may arrive via appsettings ("Gemini:ApiKey"), a Render-style
+    // "Gemini__ApiKey" env var, or a plain "GEMINI_API_KEY" env var. Try all
+    // three so a single well-known variable name works on any host.
+    var apiKey = _options.ApiKey;
+    if (string.IsNullOrWhiteSpace(apiKey))
+    {
+      apiKey = _configuration["GEMINI_API_KEY"] ?? string.Empty;
+    }
+    if (string.IsNullOrWhiteSpace(apiKey))
     {
       throw new InvalidOperationException("Gemini API key is missing.");
     }
     var model = _configuration["Gemini:Model"] ?? "gemini-2.5-flash-lite-001";
 
-    var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={_options.ApiKey}";
+    var url = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={apiKey}";
 
     var requestBody = new
     {
